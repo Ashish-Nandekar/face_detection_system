@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}AttendanceIQ{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- ── Topbar ─────────────────────────────────────────────── -->
+<header class="topbar" role="banner">
+  <div class="container topbar-inner">
+
+    <!-- Brand -->
+    <a href="{{ url_for('dashboard.home') }}" class="brand">
+      <div class="brand-icon">📋</div>
+      AttendanceIQ
+    </a>
+
+    <!-- Mobile burger -->
+    <button class="nav-burger" id="nav-burger" aria-label="Toggle navigation" aria-expanded="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+
+    {% if current_user.is_authenticated %}
+    <!-- Nav links -->
+    <nav class="nav-links" id="nav-links" aria-label="Main navigation">
+      <a href="{{ url_for('dashboard.home') }}"
+         class="{{ 'active' if request.endpoint == 'dashboard.home' }}">
+        Dashboard
+      </a>
+
+      {% if current_user.role in ['admin', 'teacher'] %}
+      <a href="{{ url_for('attendance.list_attendance') }}"
+         class="{{ 'active' if request.blueprint == 'attendance' }}">
+        Attendance
+      </a>
+      {% endif %}
+
+      {% if current_user.role == 'admin' %}
+      <a href="{{ url_for('admin.users') }}"
+         class="{{ 'active' if request.endpoint == 'admin.users' }}">
+        Users
+      </a>
+      <a href="{{ url_for('admin.subjects') }}"
+         class="{{ 'active' if request.endpoint == 'admin.subjects' }}">
+        Subjects
+      </a>
+      {% endif %}
+
+      {% if current_user.role == 'student' %}
+      <a href="{{ url_for('student.my_profile') }}"
+         class="{{ 'active' if request.blueprint == 'student' }}">
+        My Profile
+      </a>
+      {% endif %}
+
+      {% if current_user.role in ['admin', 'teacher'] %}
+      <a href="{{ url_for('dashboard.export_csv') }}" title="Download CSV report">
+        Export CSV
+      </a>
+      <a href="{{ url_for('dashboard.export_pdf') }}" title="Download PDF report">
+        Export PDF
+      </a>
+      {% endif %}
+    </nav>
+
+    <!-- User chip + logout -->
+    <div class="nav-right">
+      <div class="user-chip">
+        <div class="user-avatar">{{ current_user.name[0]|upper }}</div>
+        <span class="user-name">{{ current_user.name.split()[0] }}</span>
+        <span class="user-role">{{ current_user.role }}</span>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="nav-logout" title="Sign out">
+        Sign out
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</header>
+
+<!-- ── Main ───────────────────────────────────────────────── -->
+<main class="container page" role="main">
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="flash-list" style="margin-bottom:20px">
+        {% for category, message in messages %}
+          <li class="flash-item flash-{{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer style="border-top:1px solid var(--border);padding:16px 0;margin-top:auto">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span style="font-size:12.5px;color:var(--muted)">© 2025 AttendanceIQ. All rights reserved.</span>
+    {% if current_user.is_authenticated %}
+    <span style="font-size:12px;color:var(--subtle)">
+      Logged in as <strong>{{ current_user.name }}</strong> &middot; {{ current_user.role|capitalize }}
+    </span>
+    {% endif %}
+  </div>
+</footer>
+
+<script>
+// Mobile nav toggle
+const burger = document.getElementById('nav-burger');
+const navLinks = document.getElementById('nav-links');
+if (burger && navLinks) {
+  burger.addEventListener('click', () => {
+    const open = navLinks.classList.toggle('open');
+    burger.setAttribute('aria-expanded', open);
+  });
+}
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
