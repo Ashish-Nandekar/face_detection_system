@@ -28,8 +28,8 @@ A web-based attendance management system that uses **face recognition** to autom
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/face-detection-attendance.git
-cd face-detection-attendance
+git clone https://github.com/Ashish-Nandekar/face_detection_system.git
+cd face_detection_system
 ```
 
 ### 2. Create virtual environment
