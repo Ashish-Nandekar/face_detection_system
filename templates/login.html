@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Sign In — AttendanceIQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
+</head>
+<body class="login-body">
+
+<div class="login-shell">
+
+  <!-- ── Left branding panel ─────────────────────────────── -->
+  <div class="login-left" aria-hidden="true">
+    <div class="login-left-inner">
+      <div class="login-logo">
+        <div class="login-logo-icon">📋</div>
+        <span>AttendanceIQ</span>
+      </div>
+      <h1 class="login-headline">Attendance,<br>done right.</h1>
+      <p class="login-tagline">
+        Face recognition meets smart record-keeping. Built for colleges, trusted by teachers.
+      </p>
+      <ul class="login-features">
+        <li>Automatic face detection</li>
+        <li>Per-subject attendance tracking</li>
+        <li>PDF &amp; CSV exports</li>
+        <li>Role-based dashboards</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── Right form panel ────────────────────────────────── -->
+  <div class="login-right">
+    <div class="login-card">
+
+      <div class="login-card-header">
+        <h2>Welcome back</h2>
+        <p>Sign in to your account.</p>
+      </div>
+
+      <!-- Role selector -->
+      <div class="login-role-group" role="group" aria-label="Login as">
+        <span class="login-role-label">I'm a</span>
+        <div class="login-role-tabs" id="role-tabs">
+          <button type="button" id="tab-student"
+                  class="lrt {% if role == 'student' %}lrt--active{% endif %}"
+                  onclick="switchRole('student')">Student</button>
+          <button type="button" id="tab-teacher"
+                  class="lrt {% if role == 'teacher' %}lrt--active{% endif %}"
+                  onclick="switchRole('teacher')">Teacher</button>
+          <button type="button" id="tab-admin"
+                  class="lrt {% if role == 'admin' %}lrt--active{% endif %}"
+                  onclick="switchRole('admin')">Admin</button>
+        </div>
+      </div>
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="lc-flash" role="alert">
+            {% for category, message in messages %}
+              <li class="lc-flash__item lc-flash--{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Form -->
+      <form id="login-form"
+            method="post"
+            action="{{ url_for('auth.login', role=role) }}"
+            novalidate>
+
+        <div class="lc-field">
+          <label for="email">Email address</label>
+          <input type="email"
+                 id="email"
+                 name="email"
+                 placeholder="you@college.edu"
+                 value="{{ prefill_email or '' }}"
+                 required
+                 autocomplete="email"/>
+        </div>
+
+        <div class="lc-field">
+          <label for="password">Password</label>
+          <input type="password"
+                 id="password"
+                 name="password"
+                 placeholder="Your password"
+                 required
+                 autocomplete="current-password"/>
+        </div>
+
+        <button type="submit" class="lc-submit" id="submit-btn">
+          Sign in as <strong id="role-label">{{ role|capitalize }}</strong>
+        </button>
+
+      </form>
+
+      <!-- Register link — always in DOM, just hidden for non-student -->
+      <p class="lc-register"
+         id="register-hint"
+         style="{{ '' if role == 'student' else 'visibility:hidden' }}">
+        New here?
+        <a href="{{ url_for('auth.register') }}">Create a student account</a>
+      </p>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const LABELS = { student: 'Student', teacher: 'Teacher', admin: 'Admin' };
+  const ACTIONS = {
+    student: {{ url_for('auth.login', role='student') | tojson }},
+    teacher: {{ url_for('auth.login', role='teacher') | tojson }},
+    admin:   {{ url_for('auth.login', role='admin')   | tojson }}
+  };
+
+  window.switchRole = function (role) {
+    // Tabs
+    document.querySelectorAll('.lrt').forEach(function (t) {
+      t.classList.remove('lrt--active');
+    });
+    document.getElementById('tab-' + role).classList.add('lrt--active');
+
+    // Form action + button
+    document.getElementById('login-form').action = ACTIONS[role];
+    document.getElementById('role-label').textContent = LABELS[role];
+
+    // Register hint — use visibility so height stays the same
+    var hint = document.getElementById('register-hint');
+    hint.style.visibility = role === 'student' ? 'visible' : 'hidden';
+  };
+}());
+</script>
+
+</body>
+</html>

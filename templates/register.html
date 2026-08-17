@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Register — AttendanceIQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
+</head>
+<body>
+<div class="auth-page">
+
+  <div class="auth-left">
+    <div class="auth-left-logo">
+      <div class="auth-left-logo-icon">📋</div>
+      <span class="auth-left-logo-name">AttendanceIQ</span>
+    </div>
+    <h1>Join your institution's attendance platform.</h1>
+    <p>Create your student account to view and track your attendance in real time.</p>
+    <ul class="auth-features">
+      <li>View attendance per subject</li>
+      <li>Get alerts when below 75%</li>
+      <li>See your full attendance history</li>
+    </ul>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <div class="auth-form-title">Create student account</div>
+      <div class="auth-form-sub">Fill in your details to get started.</div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flash-list" style="margin-bottom:18px">
+            {% for category, message in messages %}
+              <li class="flash-item flash-{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+
+      <form method="post" novalidate>
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" name="name" required placeholder="Your full name" class="form-control"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" name="email" required placeholder="you@institution.edu" class="form-control"/>
+        </div>
+        <div class="grid2" style="gap:14px">
+          <div class="form-group">
+            <label class="form-label">Roll Number</label>
+            <input type="text" name="roll_no" required placeholder="e.g. S001" class="form-control"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Course</label>
+            <input type="text" name="course" placeholder="e.g. BSc CS" class="form-control"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Section</label>
+          <input type="text" name="section" placeholder="e.g. A" class="form-control" style="max-width:120px"/>
+        </div>
+        <div class="grid2" style="gap:14px">
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" required minlength="6" placeholder="Min 6 chars" class="form-control"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" name="confirm_password" required minlength="6" placeholder="Re-enter" class="form-control"/>
+          </div>
+        </div>
+        <button type="submit" class="btn-auth">Create Account</button>
+      </form>
+
+      <p class="auth-link">Already have an account? <a href="{{ url_for('auth.login', role='student') }}">Sign in</a></p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
