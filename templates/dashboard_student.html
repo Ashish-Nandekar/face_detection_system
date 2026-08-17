@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard — AttendanceIQ{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>My Attendance</h1>
+    <p>Track your attendance across all subjects.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('student.my_profile') }}" class="btn btn-primary btn-sm">Full Profile</a>
+  </div>
+</div>
+
+<!-- Attendance rate hero -->
+<div class="card" style="margin-bottom:24px">
+  <div style="display:flex;align-items:center;gap:40px;flex-wrap:wrap;padding:8px 0">
+    <div style="text-align:center;min-width:140px">
+      <div class="stat-label" style="margin-bottom:8px">Overall Attendance</div>
+      <div class="big-rate {{ 'rate-good' if attendance_rate >= 75 else 'rate-bad' }}">
+        {{ attendance_rate }}%
+      </div>
+      <div class="progress" style="margin-top:10px;width:140px">
+        <div class="progress-bar {{ 'progress-green' if attendance_rate >= 75 else 'progress-red' }}"
+             style="width:{{ attendance_rate }}%"></div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      {% if attendance_rate < 75 %}
+      <div class="flash-item flash-danger" style="margin-bottom:0">
+        ⚠️ Your attendance is below the 75% minimum requirement. Please attend more classes.
+      </div>
+      {% else %}
+      <div class="flash-item flash-success" style="margin-bottom:0">
+        ✅ Your attendance is good. Keep it up!
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if subject_breakdown %}
+<!-- Subject breakdown -->
+<div class="card" style="margin-bottom:24px">
+  <div class="card-header">
+    <span class="card-title">📚 Subject-wise Attendance</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Subject</th><th>Code</th><th>Present</th><th>Total</th><th>%</th><th>Progress</th></tr>
+      </thead>
+      <tbody>
+        {% for s in subject_breakdown %}
+        <tr {% if s.rate < 75 and s.total > 0 %}class="row-alert"{% endif %}>
+          <td><strong>{{ s.subject }}</strong></td>
+          <td><span class="badge badge-student">{{ s.code }}</span></td>
+          <td>{{ s.present }}</td>
+          <td class="td-muted">{{ s.total }}</td>
+          <td class="{{ 'rate-good' if s.rate >= 75 else ('rate-bad' if s.total > 0 else 'td-muted') }}">
+            {{ s.rate }}%
+          </td>
+          <td style="width:120px">
+            <div class="progress">
+              <div class="progress-bar {{ 'progress-green' if s.rate >= 75 else ('progress-red' if s.total > 0 else '') }}"
+                   style="width:{{ s.rate }}%"></div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Recent records -->
+<div class="card" style="padding:0">
+  <div class="card-header" style="padding:20px 24px 0">
+    <span class="card-title">📅 Recent Attendance</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Time</th><th>Subject</th><th>Status</th><th>Recorded by</th></tr>
+      </thead>
+      <tbody>
+        {% for row in recent %}
+        <tr>
+          <td>{{ row.date.strftime('%d %b %Y') }}</td>
+          <td class="td-muted">{{ row.time.strftime('%H:%M') }}</td>
+          <td>{{ row.subject.name if row.subject else '—' }}</td>
+          <td><span class="badge badge-{{ row.status|lower }}">{{ row.status }}</span></td>
+          <td>
+            <span class="badge {{ 'badge-camera' if row.source == 'camera' else 'badge-manual' }}">
+              {{ row.source }}
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">
+          <div class="table-empty"><div class="table-empty-icon">📋</div>No attendance records yet.</div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

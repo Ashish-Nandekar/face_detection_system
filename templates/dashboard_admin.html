@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — AttendanceIQ{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Good {{ 'morning' if now_hour < 12 else ('afternoon' if now_hour < 17 else 'evening') }}, {{ current_user.name.split()[0] }}</h1>
+    <p>Here's what's happening with attendance today.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('admin.users') }}"    class="btn btn-outline btn-sm">Manage Users</a>
+    <a href="{{ url_for('admin.subjects') }}" class="btn btn-outline btn-sm">Manage Subjects</a>
+    <a href="{{ url_for('attendance.list_attendance') }}" class="btn btn-primary btn-sm">Attendance</a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stat-grid">
+  <div class="card stat-card">
+    <div class="stat-icon stat-icon-green">👥</div>
+    <div>
+      <div class="stat-label">Today Present</div>
+      <div class="stat-value" style="color:var(--green)">{{ today_present }}</div>
+      <div class="stat-sub">out of {{ total_students }} students</div>
+    </div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-icon stat-icon-blue">🎓</div>
+    <div>
+      <div class="stat-label">Total Students</div>
+      <div class="stat-value">{{ total_students }}</div>
+      <div class="stat-sub">enrolled</div>
+    </div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-icon {{ 'stat-icon-green' if today_rate >= 75 else 'stat-icon-red' }}">📊</div>
+    <div>
+      <div class="stat-label">Today's Rate</div>
+      <div class="stat-value {{ 'rate-good' if today_rate >= 75 else 'rate-bad' }}">{{ today_rate }}%</div>
+      <div class="progress" style="width:100px">
+        <div class="progress-bar {{ 'progress-green' if today_rate >= 75 else 'progress-red' }}"
+             style="width:{{ today_rate }}%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if low_attendance %}
+<!-- Low Attendance Alert -->
+<div class="card" style="border-left:3px solid var(--red);margin-bottom:24px">
+  <div class="card-header">
+    <span class="card-title">⚠️ Low Attendance Alert
+      <span class="badge badge-absent" style="margin-left:8px">{{ low_attendance|length }} students</span>
+    </span>
+    <a href="{{ url_for('attendance.list_attendance') }}" class="btn btn-sm btn-outline">View All</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Student</th><th>Roll No</th><th>Attendance</th><th>Progress</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for s in low_attendance %}
+        <tr class="row-alert">
+          <td><strong>{{ s.name }}</strong></td>
+          <td class="td-muted">{{ s.roll_no }}</td>
+          <td><span class="rate-bad">{{ s.rate }}%</span></td>
+          <td style="width:120px">
+            <div class="progress"><div class="progress-bar progress-red" style="width:{{ s.rate }}%"></div></div>
+          </td>
+          <td>
+            <a href="{{ url_for('student.view_profile', student_id=s.student_id) }}"
+               class="btn btn-sm btn-outline">View</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Trend + Subjects -->
+<div class="grid2" style="margin-bottom:24px">
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📈 7-Day Trend</span>
+    </div>
+    {% set max_count = trend|map(attribute='present_count')|max if trend else 1 %}
+    <div class="trend-bar">
+      {% for item in trend %}
+      {% set pct = ((item.present_count / max_count) * 100)|int if max_count > 0 else 0 %}
+      <div class="trend-col" title="{{ item.date }}: {{ item.present_count }} present">
+        <div class="trend-fill" style="height:{{ pct }}%"></div>
+        <span class="trend-label">{{ item.date[-5:] }}</span>
+      </div>
+      {% else %}
+      <p class="text-muted text-sm">No data for the last 7 days.</p>
+      {% endfor %}
+    </div>
+    <ul class="clean-list" style="margin-top:12px">
+      {% for item in trend %}
+      <li>
+        <span class="td-muted">{{ item.date }}</span>
+        <strong>{{ item.present_count }} present</strong>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📚 Subject Summary</span>
+      <a href="{{ url_for('admin.subjects') }}" class="btn btn-sm btn-ghost">Manage</a>
+    </div>
+    {% if subject_summary %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Subject</th><th>Code</th><th>Present</th></tr></thead>
+        <tbody>
+          {% for s in subject_summary %}
+          <tr>
+            <td>{{ s.name }}</td>
+            <td><span class="badge badge-student">{{ s.code }}</span></td>
+            <td><strong>{{ s.present_count }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="table-empty">
+      <div class="table-empty-icon">📚</div>
+      No subjects added yet.
+      <a href="{{ url_for('admin.subjects') }}">Add subjects</a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Top Defaulters + Export -->
+<div class="grid2">
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📉 Top Defaulters</span>
+    </div>
+    {% if defaulters %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Student</th><th>Days Present</th><th></th></tr></thead>
+        <tbody>
+          {% for d in defaulters %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="avatar avatar-sm">{{ d.name[0]|upper }}</div>
+                <span>{{ d.name }}</span>
+              </div>
+            </td>
+            <td><strong>{{ d.present_days }}</strong></td>
+            <td>
+              <a href="{{ url_for('student.view_profile', student_id=d.student_id) }}"
+                 class="btn btn-sm btn-outline">Profile</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="table-empty"><div class="table-empty-icon">🎉</div>No defaulters found.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">⬇️ Export Reports</span></div>
+    <p class="text-muted text-sm" style="margin-bottom:20px">Download attendance data in your preferred format.</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <a href="{{ url_for('dashboard.export_csv') }}" class="btn btn-outline">
+        📄 Download CSV Report
+      </a>
+      <a href="{{ url_for('dashboard.export_pdf') }}" class="btn btn-dark">
+        📑 Download PDF Report
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const h = new Date().getHours();
+</script>
+{% endblock %}

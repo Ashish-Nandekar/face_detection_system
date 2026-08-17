@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Teacher Dashboard — AttendanceIQ{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Good {{ 'morning' if now_hour < 12 else ('afternoon' if now_hour < 17 else 'evening') }}, {{ current_user.name.split()[0] }}</h1>
+    <p>Your class attendance summary for today.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('dashboard.export_csv') }}" class="btn btn-outline btn-sm">Export CSV</a>
+    <a href="{{ url_for('dashboard.export_pdf') }}" class="btn btn-outline btn-sm">Export PDF</a>
+    <a href="{{ url_for('attendance.list_attendance') }}" class="btn btn-primary btn-sm">Manage Attendance</a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stat-grid">
+  <div class="card stat-card">
+    <div class="stat-icon stat-icon-green">👥</div>
+    <div>
+      <div class="stat-label">Today Present</div>
+      <div class="stat-value" style="color:var(--green)">{{ today_present }}</div>
+      <div class="stat-sub">out of {{ total_students }}</div>
+    </div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-icon stat-icon-blue">🎓</div>
+    <div>
+      <div class="stat-label">Total Students</div>
+      <div class="stat-value">{{ total_students }}</div>
+      <div class="stat-sub">enrolled</div>
+    </div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-icon {{ 'stat-icon-green' if today_rate >= 75 else 'stat-icon-red' }}">📊</div>
+    <div>
+      <div class="stat-label">Attendance Rate</div>
+      <div class="stat-value {{ 'rate-good' if today_rate >= 75 else 'rate-bad' }}">{{ today_rate }}%</div>
+      <div class="progress" style="width:100px">
+        <div class="progress-bar {{ 'progress-green' if today_rate >= 75 else 'progress-red' }}"
+             style="width:{{ today_rate }}%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if low_attendance %}
+<div class="card" style="border-left:3px solid var(--red);margin-bottom:24px">
+  <div class="card-header">
+    <span class="card-title">⚠️ Students Below 75%
+      <span class="badge badge-absent" style="margin-left:8px">{{ low_attendance|length }}</span>
+    </span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Student</th><th>Roll No</th><th>Attendance %</th><th>Progress</th><th></th></tr></thead>
+      <tbody>
+        {% for s in low_attendance %}
+        <tr class="row-alert">
+          <td><strong>{{ s.name }}</strong></td>
+          <td class="td-muted">{{ s.roll_no }}</td>
+          <td><span class="rate-bad">{{ s.rate }}%</span></td>
+          <td style="width:120px">
+            <div class="progress"><div class="progress-bar progress-red" style="width:{{ s.rate }}%"></div></div>
+          </td>
+          <td><a href="{{ url_for('student.view_profile', student_id=s.student_id) }}" class="btn btn-sm btn-outline">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="grid2">
+  <div class="card">
+    <div class="card-header"><span class="card-title">📈 7-Day Trend</span></div>
+    {% set max_count = trend|map(attribute='present_count')|max if trend else 1 %}
+    <div class="trend-bar">
+      {% for item in trend %}
+      {% set pct = ((item.present_count / max_count) * 100)|int if max_count > 0 else 0 %}
+      <div class="trend-col" title="{{ item.date }}: {{ item.present_count }}">
+        <div class="trend-fill" style="height:{{ pct }}%"></div>
+        <span class="trend-label">{{ item.date[-5:] }}</span>
+      </div>
+      {% else %}
+      <p class="text-muted text-sm">No data yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">📚 Subject Summary</span></div>
+    {% if subject_summary %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Subject</th><th>Present Count</th></tr></thead>
+        <tbody>
+          {% for s in subject_summary %}
+          <tr>
+            <td>{{ s.name }} <span class="badge badge-student" style="margin-left:4px">{{ s.code }}</span></td>
+            <td><strong>{{ s.present_count }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="table-empty"><div class="table-empty-icon">📚</div>No subjects yet.</div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
