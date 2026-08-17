@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Subjects — AttendanceIQ{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Subject Management</h1>
+    <p>Add and manage subjects for attendance tracking.</p>
+  </div>
+  <a href="{{ url_for('dashboard.home') }}" class="btn btn-outline btn-sm">← Dashboard</a>
+</div>
+
+<div class="card" style="margin-bottom:24px">
+  <div class="card-header"><span class="card-title">➕ Add New Subject</span></div>
+  <form method="post" action="{{ url_for('admin.create_subject') }}">
+    <div class="grid4">
+      <div>
+        <label>Subject Name</label>
+        <input type="text" name="name" required placeholder="e.g. Mathematics"/>
+      </div>
+      <div>
+        <label>Code</label>
+        <input type="text" name="code" required placeholder="e.g. MATH101"/>
+      </div>
+      <div>
+        <label>Course</label>
+        <input type="text" name="course" placeholder="e.g. BSc CS"/>
+      </div>
+      <div>
+        <label>Section</label>
+        <input type="text" name="section" placeholder="e.g. A"/>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Add Subject</button>
+  </form>
+</div>
+
+<div class="card" style="padding:0">
+  <div class="card-header" style="padding:20px 24px 0">
+    <span class="card-title">All Subjects
+      <span class="badge badge-student" style="margin-left:8px">{{ subjects|length }}</span>
+    </span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Subject</th><th>Code</th><th>Course</th><th>Section</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        {% for s in subjects %}
+        <tr>
+          <td><strong>{{ s.name }}</strong></td>
+          <td><span class="badge badge-student">{{ s.code }}</span></td>
+          <td class="td-muted">{{ s.course or '—' }}</td>
+          <td class="td-muted">{{ s.section or '—' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin.delete_subject', subject_id=s.id) }}"
+                  onsubmit="return confirm('Delete {{ s.name }}? This cannot be undone.')">
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">
+          <div class="table-empty"><div class="table-empty-icon">📚</div>No subjects yet. Add one above.</div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

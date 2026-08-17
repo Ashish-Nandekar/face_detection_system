@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}User Management — AttendanceIQ{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>User Management</h1>
+    <p>Create and manage all system users.</p>
+  </div>
+  <a href="{{ url_for('dashboard.home') }}" class="btn btn-outline btn-sm">← Dashboard</a>
+</div>
+
+<!-- Create User form -->
+<div class="card" style="margin-bottom:24px">
+  <div class="card-header"><span class="card-title">➕ Create New User</span></div>
+  <form method="post" action="{{ url_for('admin.create_user') }}">
+    <div class="grid3">
+      <div>
+        <label>Full Name</label>
+        <input type="text" name="name" required placeholder="e.g. Rahul Sharma"/>
+      </div>
+      <div>
+        <label>Email Address</label>
+        <input type="email" name="email" required placeholder="rahul@college.edu"/>
+      </div>
+      <div>
+        <label>Role</label>
+        <select name="role" id="role-select" onchange="toggleStudentFields(this.value)">
+          <option value="student">Student</option>
+          <option value="teacher">Teacher</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+    </div>
+    <div id="student-fields">
+      <div class="grid3">
+        <div>
+          <label>Roll Number</label>
+          <input type="text" name="roll_no" placeholder="e.g. S002"/>
+        </div>
+        <div>
+          <label>Course</label>
+          <input type="text" name="course" placeholder="e.g. BSc CS"/>
+        </div>
+        <div>
+          <label>Section</label>
+          <input type="text" name="section" placeholder="e.g. A"/>
+        </div>
+      </div>
+    </div>
+    <div style="max-width:360px">
+      <label>Password</label>
+      <input type="password" name="password" required minlength="6" placeholder="Minimum 6 characters"/>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Create User</button>
+  </form>
+</div>
+
+<!-- Users table -->
+<div class="card" style="padding:0">
+  <div class="card-header" style="padding:20px 24px 0">
+    <span class="card-title">All Users
+      <span class="badge badge-student" style="margin-left:8px">{{ users|length }}</span>
+    </span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="avatar avatar-sm">{{ u.name[0]|upper }}</div>
+              <strong>{{ u.name }}</strong>
+            </div>
+          </td>
+          <td class="td-muted">{{ u.email }}</td>
+          <td><span class="badge badge-{{ u.role }}">{{ u.role|capitalize }}</span></td>
+          <td>
+            <span class="badge {{ 'badge-active' if u.is_active_user else 'badge-inactive' }}">
+              {{ 'Active' if u.is_active_user else 'Inactive' }}
+            </span>
+          </td>
+          <td class="td-muted">{{ u.created_at.strftime('%d %b %Y') }}</td>
+          <td>
+            <div style="display:flex;gap:6px;align-items:center">
+              <form method="post" action="{{ url_for('admin.toggle_user', user_id=u.id) }}">
+                <button type="submit"
+                        class="btn btn-sm {{ 'btn-danger' if u.is_active_user else 'btn-success' }}">
+                  {{ 'Deactivate' if u.is_active_user else 'Activate' }}
+                </button>
+              </form>
+              {% if u.role == 'student' and u.student_profile %}
+              <a href="{{ url_for('student.view_profile', student_id=u.student_profile.id) }}"
+                 class="btn btn-sm btn-outline">Profile</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">
+          <div class="table-empty"><div class="table-empty-icon">👤</div>No users yet.</div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function toggleStudentFields(role) {
+  document.getElementById('student-fields').style.display = role === 'student' ? '' : 'none';
+}
+toggleStudentFields(document.getElementById('role-select').value);
+</script>
+
+{% endblock %}

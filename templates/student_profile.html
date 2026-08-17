@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{{ student.name }} — AttendanceIQ{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Student Profile</h1>
+    <p>Detailed attendance breakdown for this student.</p>
+  </div>
+  <a href="javascript:history.back()" class="btn btn-outline btn-sm">← Back</a>
+</div>
+
+<!-- Profile card -->
+<div class="card profile-card" style="margin-bottom:24px">
+  <div class="avatar avatar-lg" style="background:{{ '#4f46e5' if rate >= 75 else '#dc2626' }}">
+    {{ student.name[0]|upper }}
+  </div>
+  <div class="profile-info">
+    <div class="profile-name">{{ student.name }}</div>
+    <div class="profile-meta">
+      <span>Roll No: <strong>{{ student.roll_no }}</strong></span>
+      {% if student.course %}<span>{{ student.course }}</span>{% endif %}
+      {% if student.section %}<span>Section {{ student.section }}</span>{% endif %}
+    </div>
+    {% if rate < 75 %}
+    <div class="flash-item flash-danger" style="margin-top:12px;margin-bottom:0;display:inline-flex">
+      ⚠️ Below 75% attendance threshold
+    </div>
+    {% endif %}
+  </div>
+  <div class="profile-stat">
+    <div class="profile-stat-val {{ 'rate-good' if rate >= 75 else 'rate-bad' }}">{{ rate }}%</div>
+    <div class="profile-stat-label">Overall</div>
+    <div class="progress" style="margin-top:8px;width:80px;margin-left:auto;margin-right:auto">
+      <div class="progress-bar {{ 'progress-green' if rate >= 75 else 'progress-red' }}"
+           style="width:{{ rate }}%"></div>
+    </div>
+    <div class="text-muted text-sm" style="margin-top:6px">{{ present }} / {{ total }} classes</div>
+  </div>
+</div>
+
+{% if subject_breakdown %}
+<div class="card" style="margin-bottom:24px;padding:0">
+  <div class="card-header" style="padding:20px 24px 0">
+    <span class="card-title">📚 Subject-wise Breakdown</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Subject</th><th>Code</th><th>Present</th><th>Total</th><th>Rate</th><th>Progress</th></tr>
+      </thead>
+      <tbody>
+        {% for s in subject_breakdown %}
+        <tr {% if s.rate < 75 and s.total > 0 %}class="row-alert"{% endif %}>
+          <td><strong>{{ s.subject }}</strong></td>
+          <td><span class="badge badge-student">{{ s.code }}</span></td>
+          <td>{{ s.present }}</td>
+          <td class="td-muted">{{ s.total }}</td>
+          <td class="{{ 'rate-good' if s.rate >= 75 else ('rate-bad' if s.total > 0 else 'td-muted') }}">
+            {{ s.rate }}%
+          </td>
+          <td style="width:120px">
+            <div class="progress">
+              <div class="progress-bar {{ 'progress-green' if s.rate >= 75 else ('progress-red' if s.total > 0 else '') }}"
+                   style="width:{{ s.rate }}%"></div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="card" style="padding:0">
+  <div class="card-header" style="padding:20px 24px 0">
+    <span class="card-title">📅 Recent Records <span class="text-muted text-sm" style="font-weight:400">(last 30)</span></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Time</th><th>Subject</th><th>Status</th><th>Source</th></tr>
+      </thead>
+      <tbody>
+        {% for row in recent %}
+        <tr>
+          <td>{{ row.date.strftime('%d %b %Y') }}</td>
+          <td class="td-muted">{{ row.time.strftime('%H:%M') }}</td>
+          <td>
+            {% if row.subject %}
+              <span class="badge badge-student">{{ row.subject.code }}</span>
+            {% else %}
+              <span class="td-muted">—</span>
+            {% endif %}
+          </td>
+          <td><span class="badge badge-{{ row.status|lower }}">{{ row.status }}</span></td>
+          <td>
+            <span class="badge {{ 'badge-camera' if row.source == 'camera' else 'badge-manual' }}">
+              {{ row.source }}
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">
+          <div class="table-empty"><div class="table-empty-icon">📋</div>No records yet.</div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
