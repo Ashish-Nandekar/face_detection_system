@@ -1,0 +1,12 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+PyMySQL
+pandas
+opencv-contrib-python
+numpy
+python-dotenv
+pytest
+reportlab
+Flask-Mail
