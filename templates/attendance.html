@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block title %}Attendance — AttendanceIQ{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Attendance</h1>
+    <p>Mark, manage and review student attendance.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('dashboard.export_csv') }}" class="btn btn-outline btn-sm">Export CSV</a>
+    <a href="{{ url_for('dashboard.export_pdf') }}" class="btn btn-dark btn-sm">Export PDF</a>
+  </div>
+</div>
+
+<!-- Actions grid -->
+<div class="grid2" style="margin-bottom:24px">
+
+  <!-- Face tools -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="card-title-icon">📷</span>Capture Faces</span>
+      </div>
+      <form method="post" action="{{ url_for('attendance.capture_faces') }}">
+        <div class="form-group">
+          <label>Student</label>
+          <select name="student_id" required>
+            {% for s in students %}
+            <option value="{{ s.id }}">{{ s.name }} ({{ s.roll_no }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Number of Samples
+            <span class="text-muted text-sm" style="font-weight:400"> (5 – 100)</span>
+          </label>
+          <input type="number" name="num_samples" min="5" max="100" value="20"/>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Start Capture</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="card-title-icon">🧠</span>Train Face Model</span>
+      </div>
+      <p class="text-muted text-sm" style="margin-bottom:18px">
+        Run this after capturing faces for all students. The model must be re-trained whenever new students are added.
+      </p>
+      <form method="post" action="{{ url_for('attendance.train_model') }}">
+        <button type="submit" class="btn btn-dark btn-sm">Train Model</button>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- Mark tools -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="card-title-icon">✏️</span>Manual Mark</span>
+      </div>
+      <form method="post" action="{{ url_for('attendance.mark_attendance') }}">
+        <div class="form-group">
+          <label>Student</label>
+          <select name="student_id" required>
+            {% for s in students %}
+            <option value="{{ s.id }}">{{ s.name }} ({{ s.roll_no }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Subject <span class="text-muted text-sm" style="font-weight:400">(optional)</span></label>
+          <select name="subject_id">
+            <option value="">No subject</option>
+            {% for subj in subjects %}
+            <option value="{{ subj.id }}">{{ subj.name }} · {{ subj.code }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-success btn-sm">Mark Present</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="card-title-icon">🎥</span>Camera Scan</span>
+      </div>
+      <p class="text-muted text-sm" style="margin-bottom:16px">
+        Opens your webcam, detects and recognizes faces automatically, and marks attendance.
+      </p>
+      <form method="post" action="{{ url_for('attendance.camera_mark') }}">
+        <div class="form-group">
+          <label>Subject <span class="text-muted text-sm" style="font-weight:400">(optional)</span></label>
+          <select name="subject_id">
+            <option value="">No subject</option>
+            {% for subj in subjects %}
+            <option value="{{ subj.id }}">{{ subj.name }} · {{ subj.code }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Start Camera Scan</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<!-- Bulk Mark -->
+<div class="card" style="margin-bottom:24px">
+  <div class="card-header">
+    <span class="card-title"><span class="card-title-icon">☑️</span>Bulk Attendance</span>
+  </div>
+  <form method="post" action="{{ url_for('attendance.bulk_mark') }}">
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="form-group" style="margin-bottom:0">
+        <label>Status</label>
+        <select name="status">
+          <option value="Present">Present</option>
+          <option value="Absent">Absent</option>
+          <option value="Late">Late</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>Subject <span class="text-muted text-sm" style="font-weight:400">(optional)</span></label>
+        <select name="subject_id">
+          <option value="">No subject</option>
+          {% for subj in subjects %}
+          <option value="{{ subj.id }}">{{ subj.name }} · {{ subj.code }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="check-actions">
+      <a onclick="document.querySelectorAll('.bulk-cb').forEach(c=>c.checked=true)">Select all</a>
+      <a onclick="document.querySelectorAll('.bulk-cb').forEach(c=>c.checked=false)">Deselect all</a>
+    </div>
+    <div class="check-list">
+      {% for s in students %}
+      <label>
+        <input type="checkbox" class="bulk-cb" name="student_ids" value="{{ s.id }}"/>
+        <span>{{ s.name }}</span>
+        <span class="td-muted text-sm" style="margin-left:auto">{{ s.roll_no }}{% if s.section %} · {{ s.section }}{% endif %}</span>
+      </label>
+      {% endfor %}
+    </div>
+    <div style="margin-top:14px">
+      <button type="submit" class="btn btn-success btn-sm">Mark Selected Students</button>
+    </div>
+  </form>
+</div>
+
+<!-- Records + Filters -->
+<div class="card" style="padding:0">
+  <div class="card-header" style="padding:20px 24px">
+    <span class="card-title">📋 Attendance Records</span>
+    <span class="text-muted text-sm">Last 300 records</span>
+  </div>
+
+  <!-- Filter bar -->
+  <form method="get" action="{{ url_for('attendance.list_attendance') }}">
+    <div class="filter-bar">
+      <div class="filter-field">
+        <label>From</label>
+        <input type="date" name="date_from" value="{{ filters.date_from }}"/>
+      </div>
+      <div class="filter-field">
+        <label>To</label>
+        <input type="date" name="date_to" value="{{ filters.date_to }}"/>
+      </div>
+      <div class="filter-field">
+        <label>Student</label>
+        <select name="student_id">
+          <option value="">All students</option>
+          {% for s in students %}
+          <option value="{{ s.id }}" {{ 'selected' if filters.student_id == s.id|string }}>
+            {{ s.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-field">
+        <label>Section</label>
+        <select name="section">
+          <option value="">All sections</option>
+          {% for sec in sections %}
+          <option value="{{ sec }}" {{ 'selected' if filters.section == sec }}>{{ sec }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-field">
+        <label>Status</label>
+        <select name="status">
+          <option value="">Any status</option>
+          <option value="Present" {{ 'selected' if filters.status == 'Present' }}>Present</option>
+          <option value="Absent"  {{ 'selected' if filters.status == 'Absent'  }}>Absent</option>
+          <option value="Late"    {{ 'selected' if filters.status == 'Late'    }}>Late</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label>Subject</label>
+        <select name="subject_id">
+          <option value="">All subjects</option>
+          {% for subj in subjects %}
+          <option value="{{ subj.id }}" {{ 'selected' if filters.subject_id == subj.id|string }}>
+            {{ subj.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+        <a href="{{ url_for('attendance.list_attendance') }}" class="btn btn-outline btn-sm">Clear</a>
+      </div>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Student</th>
+          <th>Subject</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Status</th>
+          <th>Source</th>
+          <th>Correct</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td class="td-muted text-sm">{{ r.id }}</td>
+          <td>
+            <a href="{{ url_for('student.view_profile', student_id=r.student_id) }}"
+               style="font-weight:500">{{ r.student.name }}</a>
+          </td>
+          <td>
+            {% if r.subject %}
+              <span class="badge badge-student">{{ r.subject.code }}</span>
+            {% else %}
+              <span class="td-muted">—</span>
+            {% endif %}
+          </td>
+          <td>{{ r.date.strftime('%d %b %Y') }}</td>
+          <td class="td-muted">{{ r.time.strftime('%H:%M') }}</td>
+          <td><span class="badge badge-{{ r.status|lower }}">{{ r.status }}</span></td>
+          <td>
+            <span class="badge {{ 'badge-camera' if r.source == 'camera' else 'badge-manual' }}">
+              {{ r.source }}
+            </span>
+          </td>
+          <td>
+            <form method="post"
+                  action="{{ url_for('attendance.correct_attendance', attendance_id=r.id) }}"
+                  style="display:flex;gap:6px;align-items:center">
+              <select name="status" style="margin-bottom:0;padding:5px 28px 5px 8px;font-size:12.5px;width:auto">
+                <option value="Present" {{ 'selected' if r.status=='Present' }}>Present</option>
+                <option value="Absent"  {{ 'selected' if r.status=='Absent'  }}>Absent</option>
+                <option value="Late"    {{ 'selected' if r.status=='Late'    }}>Late</option>
+              </select>
+              <button type="submit" class="btn btn-outline btn-sm">Save</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8">
+          <div class="table-empty">
+            <div class="table-empty-icon">📋</div>
+            No records match your filters.
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
